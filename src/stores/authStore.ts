@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { axios } from 'axios';
+import axios  from 'axios';
 import { API_URL } from '../config';
 
 interface AuthState {
@@ -15,10 +15,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   login: async (phone: string, password: string) => {
     try {
-      const response = await axios.post(`${API_URL}/login`, { phone, password });
+      const response = await axios.post(`${API_URL}/login`, { number:phone, password });
+      console.log({API_URL, phone, password, response})
       const { token } = response.data;
       set({ token, isAuthenticated: true });
     } catch (error) {
+      console.log({error})
       throw new Error('Login failed');
     }
   },

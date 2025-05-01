@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
+import RNPickerSelect from 'react-native-picker-select';
 import { API_URL, COLORS, SPACING, FONTS } from '../config';
 
 const pollFormSchema = z.object({
@@ -16,12 +17,18 @@ const pollFormSchema = z.object({
 type PollForm = z.infer<typeof pollFormSchema>;
 
 export default function PollFormScreen() {
+  console.log('in pole form screen');
   const navigation = useNavigation();
   const [divisions, setDivisions] = useState([]);
   const [subdivisions, setSubdivisions] = useState([]);
   const [feeders, setFeeders] = useState([]);
 
-  const { control, handleSubmit, watch, formState: { errors } } = useForm<PollForm>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<PollForm>({
     resolver: zodResolver(pollFormSchema),
   });
 
@@ -39,33 +46,37 @@ export default function PollFormScreen() {
   }, [division]);
 
   useEffect(() => {
-    if (division && subdivision) {
-      fetchFeeders(division, subdivision);
+    if (subdivision) {
+      fetchFeeders(subdivision);
     }
-  }, [division, subdivision]);
+  }, [subdivision]);
 
   const fetchDivisions = async () => {
     try {
-      const response = await axios.get(`${API_URL}/recommendations/division`);
-      setDivisions(response.data);
+      const response = await axios.get(`${API_URL}/recommendations`);
+      console.log(response.data);
+      setDivisions(response.data.divisions);
     } catch (error) {
       console.error('Error fetching divisions:', error);
     }
   };
 
-  const fetchSubdivisions = async (division: string) => {
+  const fetchSubdivisions = async (divisionId: string) => {
     try {
-      const response = await axios.get(`${API_URL}/recommendations/subdivision?division=${division}`);
+      const response = await axios.get(
+        `${API_URL}/recommendations?divisionId=${divisionId}`,
+      );
+      console.log({ response });
       setSubdivisions(response.data);
     } catch (error) {
       console.error('Error fetching subdivisions:', error);
     }
   };
 
-  const fetchFeeders = async (division: string, subdivision: string) => {
+  const fetchFeeders = async (subdivisionId: string) => {
     try {
       const response = await axios.get(
-        `${API_URL}/recommendations/feeder?division=${division}&subdivision=${subdivision}`
+        `${API_URL}/recommendations?subdivisionId=${subdivisionId}`,
       );
       setFeeders(response.data);
     } catch (error) {
@@ -74,66 +85,74 @@ export default function PollFormScreen() {
   };
 
   const onSubmit = (data: PollForm) => {
-    navigation.navigate('TCNumber', data);
+    console.log('Form Data:', data);
+    // Handle form submission
   };
 
+  console.log({ divisions });
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>New Poll</Text>
-
-      <Controller
-        control={control}
-        name="division"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Division"
-            onChangeText={onChange}
-            value={value}
-          />
-        )}
-      />
-      {errors.division && (
-        <Text style={styles.errorText}>{errors.division.message}</Text>
+      <Text style={styles.label}>Division</Text>
+      {divisions && (
+        <Controller
+          control={control}
+          name="division"
+          render={({ field: { onChange, value } }) => (
+            <RNPickerSelect
+              onValueChange={onChange}
+              items={divisions?.map((division) => ({
+                label: division.name,
+                value: division.id,
+              }))}
+              value={value}
+              placeholder={{ label: 'Select a division', value: null }}
+              style={pickerSelectStyles}
+            />
+          )}
+        />
       )}
+      {/* {errors.division && <Text style={styles.error}>{errors.division.message}</Text>} */}
 
+      <Text style={styles.label}>Sub-division</Text>
       <Controller
         control={control}
         name="subdivision"
         render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Sub-division"
-            onChangeText={onChange}
+          <RNPickerSelect
+            onValueChange={onChange}
+            items={subdivisions.map((subdivision) => ({
+              label: subdivision.name,
+              value: subdivision.id,
+            }))}
             value={value}
+            placeholder={{ label: 'Select a sub-division', value: null }}
+            style={pickerSelectStyles}
           />
         )}
       />
-      {errors.subdivision && (
-        <Text style={styles.errorText}>{errors.subdivision.message}</Text>
-      )}
+      {/* {errors.subdivision && <Text style={styles.error}>{errors.subdivision.message}</Text>} */}
 
+      <Text style={styles.label}>Feeder</Text>
       <Controller
         control={control}
         name="feeder"
         render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Feeder"
-            onChangeText={onChange}
+          <RNPickerSelect
+            onValueChange={onChange}
+            items={feeders.map((feeder) => ({
+              label: feeder.name,
+              value: feeder.id,
+            }))}
             value={value}
+            placeholder={{ label: 'Select a feeder', value: null }}
+            style={pickerSelectStyles}
           />
         )}
       />
-      {errors.feeder && (
-        <Text style={styles.errorText}>{errors.feeder.message}</Text>
-      )}
+      {/* {errors.feeder && <Text style={styles.error}>{errors.feeder.message}</Text>} */}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSubmit(onSubmit)}
-      >
-        <Text style={styles.buttonText}>Next</Text>
+      <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)}>
+        <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
     </View>
   );
@@ -142,40 +161,52 @@ export default function PollFormScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: SPACING.lg,
-    backgroundColor: COLORS.background,
-  },
-  title: {
-    ...FONTS.bold,
-    fontSize: 24,
-    marginBottom: SPACING.xl,
-    color: COLORS.text.primary,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: COLORS.secondary,
-    borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
+    padding: SPACING.medium,
     backgroundColor: COLORS.white,
   },
-  errorText: {
+  label: {
+    fontSize: FONTS.medium,
+    color: COLORS.black,
+    marginBottom: SPACING.small,
+  },
+  error: {
     color: COLORS.error,
-    marginBottom: SPACING.md,
-    fontSize: 14,
+    marginBottom: SPACING.small,
   },
   button: {
-    height: 48,
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    justifyContent: 'center',
+    padding: SPACING.medium,
+    borderRadius: SPACING.small,
     alignItems: 'center',
-    marginTop: SPACING.lg,
+    marginTop: SPACING.large,
   },
   buttonText: {
     color: COLORS.white,
-    ...FONTS.medium,
-    fontSize: 16,
+    fontSize: FONTS.medium,
   },
 });
+
+const pickerSelectStyles = {
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: COLORS.gray,
+    borderRadius: 4,
+    color: COLORS.black,
+    paddingRight: 30,
+    marginBottom: SPACING.small,
+  },
+  inputAndroid: {
+    fontSize: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: COLORS.gray,
+    borderRadius: 4,
+    color: COLORS.black,
+    paddingRight: 30,
+    marginBottom: SPACING.small,
+  },
+};

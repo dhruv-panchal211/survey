@@ -4,7 +4,6 @@ import { type PropsWithChildren } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { ThemeProvider } from '@/theme';
-import '@/translations';
 
 function TestAppWrapper({ children }: PropsWithChildren) {
   return (

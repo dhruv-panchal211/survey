@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,7 +25,11 @@ export default function TCNumberScreen() {
   const route = useRoute();
   const [location, setLocation] = useState(null);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<TCNumberForm>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<TCNumberForm>({
     resolver: zodResolver(tcNumberSchema),
   });
 
@@ -34,7 +44,7 @@ export default function TCNumberScreen() {
       (error) => {
         console.error(error);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
     );
   }, []);
 
@@ -105,16 +115,15 @@ export default function TCNumberScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: SPACING.lg,
+    padding: SPACING.large,
     backgroundColor: COLORS.background,
   },
   title: {
-    ...FONTS.bold,
     fontSize: 24,
+    fontWeight: '700',
     marginBottom: SPACING.xl,
     color: COLORS.text.primary,
   },
@@ -123,20 +132,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.secondary,
     borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.medium,
+    marginBottom: SPACING.small,
     backgroundColor: COLORS.white,
+    fontSize: FONTS.medium,
   },
   errorText: {
     color: COLORS.error,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.medium,
     fontSize: 14,
   },
   locationInfo: {
     backgroundColor: COLORS.white,
-    padding: SPACING.md,
+    padding: SPACING.medium,
     borderRadius: 8,
-    marginVertical: SPACING.md,
+    marginVertical: SPACING.medium,
   },
   locationText: {
     color: COLORS.text.secondary,
@@ -149,11 +159,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.lg,
+    marginTop: SPACING.large,
   },
   buttonText: {
     color: COLORS.white,
-    ...FONTS.medium,
-    fontSize: 16,
+    fontSize: FONTS.medium,
+    fontWeight: '500',
   },
 });

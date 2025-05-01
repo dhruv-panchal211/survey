@@ -1,10 +1,12 @@
-export const API_URL = 'http://localhost:5000/api';
+export const API_URL = 'https://polllocator-1.onrender.com';
 
 export const COLORS = {
   primary: '#2563eb',
   secondary: '#64748b',
   background: '#f8fafc',
   white: '#ffffff',
+  black: '#000000', // ✅ added for styles.color: COLORS.black
+  gray: '#d1d5db',   // ✅ added for picker border color
   error: '#ef4444',
   text: {
     primary: '#1a1a1a',
@@ -14,9 +16,9 @@ export const COLORS = {
 
 export const SPACING = {
   xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
+  small: 8,     // ✅ added to match SPACING.small used in styles
+  medium: 16,   // ✅ added to match SPACING.medium
+  large: 24,    // ✅ added to match SPACING.large
   xl: 32,
 };
 
@@ -25,12 +27,6 @@ export const FONTS = {
     fontFamily: 'System',
     fontWeight: '400',
   },
-  medium: {
-    fontFamily: 'System',
-    fontWeight: '500',
-  },
-  bold: {
-    fontFamily: 'System',
-    fontWeight: '700',
-  },
+  medium: 16, // ✅ added as used as fontSize: FONTS.medium
+  bold: 18,
 };

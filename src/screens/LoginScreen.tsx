@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,72 +23,86 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
-  const navigation = useNavigation();
+  const navigation: any = useNavigation(); // Replace with proper typed navigation if needed
   const { login } = useAuthStore();
-  const { control, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      phone: '7984013359',
+      password: 'Neel@3315',
+    },
   });
 
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data.phone, data.password);
+      navigation.navigate('PollForm');
     } catch (error) {
       console.error('Login error:', error);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome Back</Text>
 
-      <Controller
-        control={control}
-        name="phone"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            keyboardType="phone-pad"
-            onChangeText={onChange}
-            value={value}
-          />
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              keyboardType="phone-pad"
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
+        />
+        {errors.phone && (
+          <Text style={styles.errorText}>{errors.phone.message}</Text>
         )}
-      />
-      {errors.phone && (
-        <Text style={styles.errorText}>{errors.phone.message}</Text>
-      )}
 
-      <Controller
-        control={control}
-        name="password"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            secureTextEntry
-            onChangeText={onChange}
-            value={value}
-          />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              secureTextEntry
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
+        />
+        {errors.password && (
+          <Text style={styles.errorText}>{errors.password.message}</Text>
         )}
-      />
-      {errors.password && (
-        <Text style={styles.errorText}>{errors.password.message}</Text>
-      )}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSubmit(onSubmit)}
-      >
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSubmit(onSubmit)}
+        >
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Register')}
-        style={styles.registerLink}
-      >
-        <Text style={styles.registerText}>Don't have an account? Register</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Register')}
+          style={styles.registerLink}
+        >
+          <Text style={styles.registerText}>
+            Don't have an account? Register
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -88,12 +110,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: SPACING.lg,
+    padding: SPACING.large,
     backgroundColor: COLORS.background,
   },
   title: {
-    ...FONTS.bold,
-    fontSize: 32,
+    fontSize: FONTS.bold,
+    fontWeight: '700',
     marginBottom: SPACING.xl,
     textAlign: 'center',
     color: COLORS.text.primary,
@@ -103,13 +125,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.secondary,
     borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.medium,
+    marginBottom: SPACING.small,
     backgroundColor: COLORS.white,
+    fontSize: FONTS.medium,
   },
   errorText: {
     color: COLORS.error,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.medium,
     fontSize: 14,
   },
   button: {
@@ -118,19 +141,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.medium,
   },
   buttonText: {
     color: COLORS.white,
-    ...FONTS.medium,
-    fontSize: 16,
+    fontSize: FONTS.medium,
+    fontWeight: '500',
   },
   registerLink: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING.large,
     alignItems: 'center',
   },
   registerText: {
     color: COLORS.primary,
-    ...FONTS.medium,
+    fontSize: FONTS.medium,
+    fontWeight: '500',
   },
 });

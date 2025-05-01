@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,7 +24,11 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function RegisterScreen() {
   const navigation = useNavigation();
   const { register } = useAuthStore();
-  const { control, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
@@ -34,7 +44,7 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create an Account</Text>
-      
+
       <Controller
         control={control}
         name="mobile"
@@ -85,10 +95,7 @@ export default function RegisterScreen() {
         <Text style={styles.errorText}>{errors.password.message}</Text>
       )}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSubmit(onSubmit)}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)}>
         <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
 
@@ -101,17 +108,16 @@ export default function RegisterScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: SPACING.lg,
+    padding: SPACING.large,
     backgroundColor: COLORS.background,
   },
   title: {
-    ...FONTS.bold,
-    fontSize: 32,
+    fontSize: FONTS.bold,
+    fontWeight: '700',
     marginBottom: SPACING.xl,
     textAlign: 'center',
     color: COLORS.text.primary,
@@ -121,13 +127,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.secondary,
     borderRadius: 8,
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.medium,
+    marginBottom: SPACING.small,
     backgroundColor: COLORS.white,
+    fontSize: FONTS.medium,
   },
   errorText: {
     color: COLORS.error,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.medium,
     fontSize: 14,
   },
   button: {
@@ -136,19 +143,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.medium,
   },
   buttonText: {
     color: COLORS.white,
-    ...FONTS.medium,
-    fontSize: 16,
+    fontSize: FONTS.medium,
+    fontWeight: '500',
   },
   registerLink: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING.large,
     alignItems: 'center',
   },
   registerText: {
     color: COLORS.primary,
-    ...FONTS.medium,
+    fontSize: FONTS.medium,
+    fontWeight: '500',
   },
-}); 
+});
