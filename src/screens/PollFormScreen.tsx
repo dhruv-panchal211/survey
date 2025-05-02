@@ -34,6 +34,8 @@ export default function PollFormScreen() {
 
   const division = watch('division');
   const subdivision = watch('subdivision');
+  const feeder = watch('feeder');
+  const isFormValid = !!(division && subdivision && feeder);
 
   useEffect(() => {
     fetchDivisions();
@@ -64,10 +66,10 @@ export default function PollFormScreen() {
   const fetchSubdivisions = async (divisionId: string) => {
     try {
       const response = await axios.get(
-        `${API_URL}/recommendations?divisionId=${divisionId}`,
+        `${API_URL}/recommendations?division_id=${divisionId}`,
       );
       console.log({ response });
-      setSubdivisions(response.data);
+      setSubdivisions(response.data.subdivisions);
     } catch (error) {
       console.error('Error fetching subdivisions:', error);
     }
@@ -76,9 +78,10 @@ export default function PollFormScreen() {
   const fetchFeeders = async (subdivisionId: string) => {
     try {
       const response = await axios.get(
-        `${API_URL}/recommendations?subdivisionId=${subdivisionId}`,
+        `${API_URL}/recommendations?subdivision_id=${subdivisionId}`,
       );
-      setFeeders(response.data);
+      console.log({ response });
+      setFeeders(response.data.feeders);
     } catch (error) {
       console.error('Error fetching feeders:', error);
     }
@@ -87,13 +90,14 @@ export default function PollFormScreen() {
   const onSubmit = (data: PollForm) => {
     console.log('Form Data:', data);
     // Handle form submission
+    navigation.navigate('CreateOptions', { feederId: data.feeder });
   };
 
   console.log({ divisions });
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Division</Text>
-      {divisions && (
+      {divisions.length && (
         <Controller
           control={control}
           name="division"
@@ -151,7 +155,14 @@ export default function PollFormScreen() {
       />
       {/* {errors.feeder && <Text style={styles.error}>{errors.feeder.message}</Text>} */}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)}>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          !isFormValid && { backgroundColor: COLORS.gray },
+        ]}
+        onPress={handleSubmit(onSubmit)}
+        disabled={!isFormValid}
+      >
         <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
     </View>
@@ -163,6 +174,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: SPACING.medium,
     backgroundColor: COLORS.white,
+    paddingTop: '50%',
   },
   label: {
     fontSize: FONTS.medium,

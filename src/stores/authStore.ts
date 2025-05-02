@@ -21,6 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ token, isAuthenticated: true });
     } catch (error) {
       console.log({error})
+      console.log({API_URL, phone, password})
       throw new Error('Login failed');
     }
   },

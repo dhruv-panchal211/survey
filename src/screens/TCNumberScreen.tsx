@@ -106,7 +106,7 @@ export default function TCNumberScreen() {
       )}
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, !location && { backgroundColor: COLORS.gray }]}
         onPress={handleSubmit(onSubmit)}
         disabled={!location}
       >

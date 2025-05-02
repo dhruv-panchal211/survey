@@ -33,8 +33,8 @@ export default function LoginScreen() {
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      phone: '7984013359',
-      password: 'Neel@3315',
+      phone: '',
+      password: '',
     },
   });
 
