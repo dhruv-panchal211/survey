@@ -76,8 +76,9 @@ function ThemeProvider({ children = false, storage }: Properties) {
   const fonts = useMemo(() => {
     return {
       ...generateFontSizes(),
-      ...generateFontColors(fullConfig),
       ...staticFontStyles,
+      ...generateFontColors(fullConfig),
+      // colors: fullConfig.fonts.colors,
     };
   }, [fullConfig]);
 
@@ -98,6 +99,7 @@ function ThemeProvider({ children = false, storage }: Properties) {
   const borders = useMemo(() => {
     return {
       ...generateBorderColors(fullConfig),
+      // colors: fullConfig.borders.colors,
       ...generateBorderRadius(),
       ...generateBorderWidths(),
       ...staticBorderStyles,

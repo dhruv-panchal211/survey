@@ -14,6 +14,8 @@ import CreateOptionsScreen from '@/screens/CreateOptionsScreen';
 import CreateTCScreen from '@/screens/CreateTCScreen';
 import CreatePollScreen from '@/screens/CreatePollScreen';
 import AddMaterialScreen from '@/screens/AddMaterialScreen';
+import AddExistingPoleMaterial from '@/screens/AddMaterialScreen';
+import AddNewPoleMaterial from '@/screens/AddNewPoleMaterial';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -31,7 +33,7 @@ function ApplicationNavigator() {
           <Stack.Screen
             name="PollForm"
             component={PollFormScreen}
-            options={{ title: 'New Poll' }}
+            options={{ title: 'New Pole' }}
           />
           <Stack.Screen
             name="CreateOptions"
@@ -46,7 +48,7 @@ function ApplicationNavigator() {
           <Stack.Screen
             name="CreatePoll"
             component={CreatePollScreen}
-            options={{ title: 'Create Poll' }}
+            options={{ title: 'Create Pole' }}
           />
           <Stack.Screen
             name="TCNumber"
@@ -55,13 +57,18 @@ function ApplicationNavigator() {
           />
           <Stack.Screen
             name="AddMaterial"
-            component={AddMaterialScreen}
-            options={{ title: 'Add Material' }}
+            component={AddExistingPoleMaterial}
+            options={{ title: 'Add Existing Material' }}
+          />
+          <Stack.Screen
+            name="AddNewPoleMaterial"
+            component={AddNewPoleMaterial}
+            options={{ title: 'Add New Material' }}
           />
           <Stack.Screen
             name="Wizard"
             component={WizardScreen}
-            options={{ title: 'Poll Details' }}
+            options={{ title: 'Pole Details' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

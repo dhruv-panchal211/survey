@@ -1,65 +1,61 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { COLORS, SPACING, FONTS } from '../config';
+import React, { useContext } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useFeederStore } from '../stores/pollStore';
+import { ThemeContext } from '@/theme/ThemeProvider/ThemeProvider';
 
 export default function CreateOptionsScreen() {
   const navigation = useNavigation();
-  const route = useRoute();
-  const { feederId } = route.params;
+  const feederId = useFeederStore((state) => state.feederId);
+  const theme = useContext(ThemeContext);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Choose an action</Text>
+    <View style={[theme.layout.flex_1, theme.gutters.largePadding, theme.backgrounds.primary, { justifyContent: 'center' }]}>
+      <Text style={[theme.fonts.title, theme.fonts.secondary, theme.fonts.alignCenter, theme.gutters.largeMarginBottom]}>
+        Choose an action
+      </Text>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[
+          theme.backgrounds.secondary,
+          theme.borders.rounded_8,
+          theme.gutters.mediumPaddingVertical,
+          theme.gutters.mediumPaddingHorizontal,
+          theme.gutters.mediumMarginBottom,
+          { alignItems: 'center' },
+        ]}
         onPress={() => navigation.navigate('CreatePoll')}
       >
-        <Text style={styles.buttonText}>Create Poll</Text>
+        <Text style={[theme.fonts.medium, theme.fonts.primary]}>Create Pole</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[
+          theme.backgrounds.secondary,
+          theme.borders.rounded_8,
+          theme.gutters.mediumPaddingVertical,
+          theme.gutters.mediumPaddingHorizontal,
+          theme.gutters.mediumMarginBottom,
+          { alignItems: 'center' },
+        ]}
         onPress={() => navigation.navigate('CreateTC', { feederId })}
       >
-        <Text style={styles.buttonText}>Create TC</Text>
+        <Text style={[theme.fonts.medium, theme.fonts.primary]}>Create TC</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.button}
+        style={[
+          theme.backgrounds.secondary,
+          theme.borders.rounded_8,
+          theme.gutters.mediumPaddingVertical,
+          theme.gutters.mediumPaddingHorizontal,
+          theme.gutters.mediumMarginBottom,
+          { alignItems: 'center' },
+        ]}
         onPress={() => navigation.navigate('PollForm')}
       >
-        <Text style={styles.buttonText}>Change Feeder</Text>
+        <Text style={[theme.fonts.medium, theme.fonts.primary]}>Change Feeder</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: SPACING.large,
-    backgroundColor: COLORS.background,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: SPACING.large,
-    textAlign: 'center',
-    color: COLORS.text.primary,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    padding: SPACING.medium,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: SPACING.medium,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: FONTS.medium,
-    fontWeight: '500',
-  },
-});

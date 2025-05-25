@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 import { COLORS, SPACING, FONTS, API_URL } from '../config';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { ThemeContext } from '@/theme/ThemeProvider/ThemeProvider';
 
 const schema = z.object({
   tc_name: z.string().min(1, 'TC Name is required'),
@@ -36,6 +37,7 @@ export default function CreateTCScreen() {
   } = useForm({
     resolver: zodResolver(schema),
   });
+  const theme = useContext(ThemeContext);
 
   const watchAllFields = watch();
   const isFormValid = !!(
@@ -96,8 +98,16 @@ export default function CreateTCScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create TC</Text>
+    <View style={[theme.layout.flex_1,
+      theme.gutters.largePadding,
+      theme.backgrounds.primary]}>
+      <Text style={[
+          theme.fonts.title,
+          theme.fonts.secondary,
+          theme.fonts.alignCenter,
+          theme.gutters.largeMarginTop,
+          theme.gutters.largeMarginBottom
+        ]}>Create TC</Text>
 
       {['tc_name', 'tc_number', 'capacity'].map((field) => (
         <Controller
@@ -106,7 +116,17 @@ export default function CreateTCScreen() {
           name={field}
           render={({ field: { onChange, value } }) => (
             <TextInput
-              style={styles.input}
+              style={[theme.borders.rounded_12,
+              theme.borders.w_1,
+              theme.borders.gray200,
+              theme.gutters.mediumPaddingHorizontal,
+              theme.gutters.mediumMarginBottom,
+              theme.fonts.medium,
+              theme.fonts.secondary,
+              theme.backgrounds.inputBackground,
+              { height: 48 }
+              ]}
+              placeholderTextColor={theme.colors.placeholder}
               placeholder={field.replace('_', ' ').toUpperCase()}
               onChangeText={onChange}
               value={value}
@@ -123,8 +143,12 @@ export default function CreateTCScreen() {
 
       <TouchableOpacity
         style={[
-          styles.button,
-          !isFormValid && { backgroundColor: COLORS.gray },
+            theme.backgrounds.purple250,
+            theme.borders.rounded_12,
+            theme.gutters.mediumMarginTop,
+            theme.gutters.mediumPaddingHorizontal,
+            { height: 48, justifyContent: 'center', alignItems: 'center' },
+          !isFormValid && { backgroundColor: theme?.colors.purple500 },
         ]}
         onPress={handleSubmit(onSubmit)}
         disabled={!isFormValid}
@@ -137,9 +161,7 @@ export default function CreateTCScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: SPACING.large,
-    backgroundColor: COLORS.background,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,

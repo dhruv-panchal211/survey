@@ -16,7 +16,7 @@ import { COLORS, SPACING, FONTS, API_URL } from '../config';
 import { useNavigation } from '@react-navigation/native';
 import { ThemeContext } from '@/theme/ThemeProvider/ThemeProvider';
 
-export default function AddExistingPoleMaterial({ route }) {
+export default function AddNewPoleMaterial({ route }) {
   const navigation = useNavigation();
 
   const { is_existing, poll_id } = route.params;
@@ -69,15 +69,17 @@ export default function AddExistingPoleMaterial({ route }) {
   const fetchQuestions = async () => {
     try {
       const res = await axios.get(`${API_URL}/questions`);
-      const existingSet = res.data[0].existingQuestions;
-      // const proposedSet = new Set(res.data[0].proposedQuestions);
-      // const questionSet = is_existing
-        // ? new Set([...existingSet, ...proposedSet])
-        // : new Set(res.data[1].proposedQuestion);
-        // const questionSetArray = Array.from(questionSet);
-        // console.log(questionSetArray);
-      setQuestions(existingSet);
-      setAvailableQuestions(existingSet);
+    //   const existingSet = new Set(res.data[0].existingQuestions);
+      console.log(res.data);
+      const proposedSet = res.data[1].proposedQuestion;
+      console.log(proposedSet);
+    //   const questionSet = is_existing
+    //     ? new Set([...existingSet, ...proposedSet])
+    //     : new Set(res.data[1].proposedQuestion);
+    //     const questionSetArray = Array.from(questionSet);
+    //     console.log(questionSetArray);
+      setQuestions(proposedSet);
+      setAvailableQuestions(proposedSet);
     } catch (err) {
       Alert.alert('Error', 'Failed to fetch material questions');
     }
@@ -112,11 +114,8 @@ export default function AddExistingPoleMaterial({ route }) {
         payload,
       );
       console.log({ poleType: res });
-      navigation.navigate('AddNewPoleMaterial',{
-        is_existing: is_existing,
-        poll_id: poll_id,
-      });
-      Alert.alert('Success', 'Existing Material info submitted successfully');
+      navigation.navigate('CreateOptions');
+      Alert.alert('Success', 'Material info submitted successfully');
     } catch (err) {
       console.log({
         err,
@@ -130,7 +129,7 @@ export default function AddExistingPoleMaterial({ route }) {
 
   return (
     <View style={[styles.container, theme.backgrounds.primary]}>
-      <Text style={[styles.title, theme.fonts.secondary]}>Add Existing Material Details</Text>
+      <Text style={[styles.title, theme.fonts.secondary]}>Add New Material Details</Text>
 
       <Text style={[styles.label, theme.fonts.secondary]}>Select Question</Text>
       <Controller

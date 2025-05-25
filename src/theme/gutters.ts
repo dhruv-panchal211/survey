@@ -56,7 +56,16 @@ export const generateGutters = (configuration: UnionConfiguration): Gutters => {
   }, {} as Gutters);
 };
 
-export const staticGutterStyles = {} as const satisfies Record<
+export const staticGutterStyles = {
+  "largePadding": { "padding": 24 },
+  "mediumPaddingHorizontal": { "paddingHorizontal": 16 },
+  "mediumPaddingVertical": { "paddingVertical": 16 },
+  "smallMarginBottom": { "marginBottom": 8 },
+  "mediumMarginBottom": { "marginBottom": 16 },
+  "mediumMarginTop": { "marginTop": 16 },
+  "largeMarginTop": { "marginTop": 24 },
+  "largeMarginBottom": { marginBottom: 24 },
+} as const satisfies Record<
   string,
   ViewStyle
 >;

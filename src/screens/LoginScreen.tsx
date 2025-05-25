@@ -1,10 +1,10 @@
-import React from 'react';
+// LoginScreen.tsx
+import React, { useContext } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
@@ -12,8 +12,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS, FONTS, SPACING } from '@/config';
 import { useAuthStore } from '@/stores/authStore';
+import { ThemeContext } from '@/theme/ThemeProvider/ThemeProvider';
 
 const loginSchema = z.object({
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
@@ -23,8 +23,9 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
-  const navigation: any = useNavigation(); // Replace with proper typed navigation if needed
+  const navigation: any = useNavigation();
   const { login } = useAuthStore();
+  const theme = useContext(ThemeContext);
 
   const {
     control,
@@ -33,8 +34,8 @@ export default function LoginScreen() {
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      phone: '',
-      password: '',
+      phone: '7984013359',
+      password: 'Neel@3315',
     },
   });
 
@@ -47,26 +48,59 @@ export default function LoginScreen() {
     }
   };
 
+  console.log(theme)
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Welcome Back</Text>
+      <View
+        style={[
+          theme.layout.flex_1,
+          theme.gutters.largePadding,
+          theme.backgrounds.primary,
+          { justifyContent: 'center' },
+        ]}
+      >
+        <Text style={[
+          theme.fonts.title,
+          theme.fonts.secondary,
+          theme.fonts.alignCenter,
+          theme.gutters.mediumMarginBottom
+        ]}>
+          Welcome Back
+        </Text>
 
         <Controller
           control={control}
           name="phone"
           render={({ field: { onChange, value } }) => (
             <TextInput
-              style={styles.input}
+              style={[
+                theme.borders.rounded_12,
+                theme.borders.w_1,
+                theme.borders.gray200,
+                theme.gutters.mediumPaddingHorizontal,
+                theme.gutters.smallMarginBottom,
+                theme.fonts.medium,
+                theme.fonts.secondary,
+                theme.backgrounds.inputBackground,
+                { height: 48 }
+              ]}
               placeholder="Phone Number"
               keyboardType="phone-pad"
               onChangeText={onChange}
               value={value}
+              placeholderTextColor={theme.colors.placeholder}
             />
           )}
         />
         {errors.phone && (
-          <Text style={styles.errorText}>{errors.phone.message}</Text>
+          <Text style={[
+            theme.fonts.small,
+            theme.fonts.error,
+            theme.gutters.smallMarginBottom
+          ]}>
+            {errors.phone.message}
+          </Text>
         )}
 
         <Controller
@@ -74,30 +108,84 @@ export default function LoginScreen() {
           name="password"
           render={({ field: { onChange, value } }) => (
             <TextInput
-              style={styles.input}
+              style={[
+                theme.borders.rounded_12,
+                theme.borders.w_1,
+                theme.borders.gray200,
+                theme.gutters.mediumPaddingHorizontal,
+                theme.gutters.mediumMarginBottom,
+                theme.fonts.medium,
+                theme.fonts.secondary,
+                theme.backgrounds.inputBackground,
+                { height: 48 }
+              ]}
               placeholder="Password"
               secureTextEntry
               onChangeText={onChange}
               value={value}
+              placeholderTextColor={theme.colors.placeholder}
             />
           )}
         />
         {errors.password && (
-          <Text style={styles.errorText}>{errors.password.message}</Text>
+          <Text style={[
+            theme.fonts.small,
+            theme.fonts.error,
+            theme.gutters.smallMarginBottom
+          ]}>
+            {errors.password.message}
+          </Text>
         )}
 
         <TouchableOpacity
-          style={styles.button}
+          style={[
+            theme.backgrounds.purple250,
+            theme.borders.rounded_12,
+            theme.gutters.mediumMarginTop,
+            theme.gutters.mediumPaddingHorizontal,
+            { height: 48, justifyContent: 'center', alignItems: 'center' },
+          ]}
           onPress={handleSubmit(onSubmit)}
         >
-          <Text style={styles.buttonText}>Login</Text>
+          <Text style={[
+            theme.fonts.medium,
+            theme.fonts.secondary,
+            theme?.fonts.bold,
+          ]}>
+            Login
+          </Text>
         </TouchableOpacity>
+
+          {/* Code For Theme Change */}
+        {/* <TouchableOpacity
+          style={[
+            theme.backgrounds.gray100,
+            theme.borders.rounded_12,
+            theme.gutters.mediumMarginTop,
+            theme.gutters.mediumPaddingHorizontal,
+            { height: 48, justifyContent: 'center', alignItems: 'center' },
+          ]}
+          onPress={() => {
+            if (theme?.variant !== 'dark') {
+              theme.changeTheme('dark');
+            } else {
+              theme.changeTheme('default');
+            }
+          }}
+        >
+          <Text style={[
+            theme.fonts.medium,
+            theme.fonts.secondary
+          ]}>
+            Change Theme
+          </Text>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           onPress={() => navigation.navigate('Register')}
-          style={styles.registerLink}
+          style={[theme.gutters.largeMarginTop, { alignItems: 'center' }]}
         >
-          <Text style={styles.registerText}>
+          <Text style={[theme.fonts.medium, theme.fonts.link]}>
             Don't have an account? Register
           </Text>
         </TouchableOpacity>
@@ -105,56 +193,3 @@ export default function LoginScreen() {
     </TouchableWithoutFeedback>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: SPACING.large,
-    backgroundColor: COLORS.background,
-  },
-  title: {
-    fontSize: FONTS.bold,
-    fontWeight: '700',
-    marginBottom: SPACING.xl,
-    textAlign: 'center',
-    color: COLORS.text.primary,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: COLORS.secondary,
-    borderRadius: 8,
-    paddingHorizontal: SPACING.medium,
-    marginBottom: SPACING.small,
-    backgroundColor: COLORS.white,
-    fontSize: FONTS.medium,
-  },
-  errorText: {
-    color: COLORS.error,
-    marginBottom: SPACING.medium,
-    fontSize: 14,
-  },
-  button: {
-    height: 48,
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: SPACING.medium,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: FONTS.medium,
-    fontWeight: '500',
-  },
-  registerLink: {
-    marginTop: SPACING.large,
-    alignItems: 'center',
-  },
-  registerText: {
-    color: COLORS.primary,
-    fontSize: FONTS.medium,
-    fontWeight: '500',
-  },
-});

@@ -42,4 +42,7 @@ export const staticFontStyles = {
   uppercase: {
     textTransform: 'uppercase',
   },
+  "title": { "fontSize": 24, "fontWeight": "bold" },
+  "medium": { "fontSize": 16 },
+  "small": { "fontSize": 12 },
 } as const satisfies Record<string, TextStyle>;

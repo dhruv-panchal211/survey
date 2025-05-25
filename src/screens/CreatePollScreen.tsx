@@ -1,21 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useContext } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Modal,
+  StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RadioButton } from 'react-native-paper';
-import RNPickerSelect from 'react-native-picker-select';
+import DropDownPicker from 'react-native-dropdown-picker';
 import axios from 'axios';
 import Geolocation from '@react-native-community/geolocation';
-import { COLORS, FONTS, SPACING, API_URL } from '../config';
+import { API_URL } from '../config';
 import { useNavigation } from '@react-navigation/native';
+import { ThemeContext } from '@/theme/ThemeProvider/ThemeProvider';
 
 const schema = z.object({
   type: z.enum(['tc', 'pole']),
@@ -23,18 +28,25 @@ const schema = z.object({
   poll_number: z.string().min(1, 'Poll Number is required'),
   status: z.enum(['existing', 'new']),
   previous_connector_type: z.enum(['tc', 'pole']),
-  previous_connector_id: z.string().optional(),
+  previous_connector_id: z.string().min(1, 'Previous Connector is required'),
 });
 
 export default function CreatePollScreen() {
-  const [type, setType] = useState<'tc' | 'pole'>('tc');
   const [tcOptions, setTcOptions] = useState([]);
   const [pollOptions, setPollOptions] = useState([]);
-  const [previousConnectorType, setPreviousConnectorType] = useState<
-    'tc' | 'pole'
-  >('tc');
   const [previousConnectorOptions, setPreviousConnectorOptions] = useState([]);
+
+  const [tcOpen, setTcOpen] = useState(false);
+  const [previousOpen, setPreviousOpen] = useState(false);
+
+  const [previousConnectorType, setPreviousConnectorType] = useState<'tc' | 'pole'>('tc');
+  const [isPopupVisible, setIsPopupVisible] = useState(false); // Popup visibility state
+  const [spanLength, setSpanLength] = useState(''); // Non-editable span length
+  const [sag, setSag] = useState(''); // Editable sag value
+  const [poleId, setPoleId] = useState(''); // Store the pole ID
+  const [poleStatus, setPoleStatus] = useState(''); // Store the pole status
   const navigation = useNavigation();
+  const theme = useContext(ThemeContext);
 
   const {
     control,
@@ -49,12 +61,13 @@ export default function CreatePollScreen() {
       status: 'new',
       previous_connector_type: 'tc',
     },
+    mode: 'onChange',
   });
 
+  const type = watch('type');
   const tc_number = watch('tc_number');
-  const previous_connector_type = watch('previous_connector_type');
-
   const poll_number = watch('poll_number');
+  const previous_connector_type = watch('previous_connector_type');
   const previous_connector_id = watch('previous_connector_id');
 
   const isFormValid = !!(tc_number && poll_number && previous_connector_id);
@@ -64,10 +77,13 @@ export default function CreatePollScreen() {
   }, []);
 
   useEffect(() => {
-    if (type === 'pole' && tc_number) fetchPoles(tc_number);
+    if (type === 'pole' && tc_number) {
+      fetchPoles(tc_number);
+    }
   }, [type, tc_number]);
 
   useEffect(() => {
+    setValue('previous_connector_id', '');
     if (previous_connector_type === 'tc') {
       setPreviousConnectorOptions(tcOptions);
       setValue('previous_connector_id', null);
@@ -80,31 +96,39 @@ export default function CreatePollScreen() {
   const fetchTransformers = async () => {
     try {
       const res = await axios.get(`${API_URL}/transformer`);
-      setTcOptions(res.data.tcs);
-      if (previous_connector_type === 'tc')
-        setPreviousConnectorOptions(res.data.tcs);
-    } catch (error) {
+      const transformed = res.data.tcs.map((item) => ({
+        label: item.name || item.tc_number || item.poll_number,
+        value: item.id,
+      }));
+      setTcOptions(transformed);
+      if (previous_connector_type === 'tc') setPreviousConnectorOptions(transformed);
+    } catch {
       Alert.alert('Error', 'Failed to fetch transformers');
     }
   };
 
   const fetchPoles = async (tc_id: string) => {
     try {
+      console.log('Fetching poles for TC ID:', tc_id);
       const res = await axios.get(`${API_URL}/poles?tc_id=${tc_id}`);
       setPollOptions(res.data);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to fetch poles');
     }
   };
 
   const fetchPreviousPoles = async (tc_id: string) => {
     try {
+      console.log('Fetching previous poles for TC ID:', tc_id);
       const res = await axios.get(`${API_URL}/poles?tc_id=${tc_id}`);
-      console.log({ resPoll: res });
-      console.log({ previousConnectorOptions });
-      setPreviousConnectorOptions(res.data.pole_numbers);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to fetch poles');
+      // setPreviousConnectorOptions(res.data.pole_numbers);
+      const poles = res.data.pole_numbers.map((item) => ({
+        label: item.name || item.pole_number,
+        value: item.id,
+      }));
+      setPreviousConnectorOptions(poles);
+    } catch {
+      Alert.alert('Error', 'Failed to fetch previous poles');
     }
   };
 
@@ -121,214 +145,297 @@ export default function CreatePollScreen() {
           lat: latitude,
           long: longitude,
         };
-        console.log('Submitted data:', payload);
+
         try {
           const res = await axios.post(`${API_URL}/pole`, payload);
-          console.log({ res: res.data.pole_id });
-          navigation.navigate('AddMaterial', {
-            is_existing: data.status === 'existing',
-            poll_id: res.data.pole_id,
-          });
-          Alert.alert('Success', 'Pole created successfully');
+          
+          const span_length = res.data.span_length; // Extract span length from response
+          console.log('Span Length:', span_length); // Log span length
+          console.log('Response:', res.data); // Log the entire response
+          setSpanLength(span_length); // Set span length in state
+          setIsPopupVisible(true); 
+          setPoleId(res.data.pole_id); // Set the pole ID in state
+          setPoleStatus(data.status);
+          // Alert.alert('Success', 'Pole created successfully');
         } catch (error: any) {
-          console.log({ error });
-          Alert.alert(
-            'Error',
-            error?.response?.data?.message || 'Failed to create poll',
-          );
+          Alert.alert('Error', error?.response?.data?.message || 'Failed to create poll');
         }
       },
-      (error) => {
-        Alert.alert('Error', 'Failed to get current location');
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      () => Alert.alert('Error', 'Failed to get current location'),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   };
+  const handlePopupSubmit = async() => {
+    // Handle the popup submission logic
+    try {
+      // Make a PATCH API call to update span_length and sag
+      console.log({span_length: spanLength,
+        sag: parseInt(sag)});
+      const response = await axios.patch(`${API_URL}/pole`, {
+        span_length: spanLength, // Send span_length in the payload
+        sag: parseInt(sag), // Send sag in the payload
+      }, {
+        params: {
+          pole_id: poleId, // Pass pole_id as a query parameter
+        },
+      });
+      console.log('Patch Response:', response.data);
+      // Check the response and show appropriate alerts
+      if (response.status === 200) {
+        console.log('Patch Response:', response.data);
+  
+        // Show success alert
+        Alert.alert('Success', 'Pole details updated successfully');
+  
+        // Close the popup and navigate to the next screen
+        setIsPopupVisible(false);
+        poleStatus === 'existing' ? navigation.navigate('AddMaterial', {
+          is_existing: poleStatus === 'existing',
+          poll_id: poleId,
+        }): navigation.navigate('AddNewPoleMaterial', {
+          is_existing: poleStatus === 'existing',
+          poll_id: poleId,
+        });
+      } else {
+        // Show a generic error alert if the status is not 200
+        Alert.alert('Error', 'Failed to update pole details. Please try again.');
+      }
+    } catch (error) {
+      console.log('Error updating pole:', error);
+  
+      // Show error alert with specific message if available
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || 'An unexpected error occurred. Please try again.'
+      );
+    }
+  };
+  const inputStyle = {
+    height: 48,
+    borderWidth: 1,
+    borderColor: theme.colors.gray200,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    backgroundColor: theme.colors.secondary,
+    color: theme.colors.primary,
+    fonts: theme?.colors.primary,
+    marginBottom: 10,
+  };
 
+  const buttonStyle = {
+    height: 48,
+    backgroundColor: isFormValid ? theme.colors.purple250 : theme.colors.purple500,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  };
+  console.log(spanLength);
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Poll</Text>
-
-      <Text style={styles.label}>TC Number</Text>
-      <Controller
-        control={control}
-        name="tc_number"
-        render={({ field: { onChange, value } }) => (
-          <RNPickerSelect
-            onValueChange={onChange}
-            value={value}
-            items={tcOptions.map((item) => ({
-              label: item.name || item.tc_number || item.poll_number,
-              value: item.id,
-            }))}
-            placeholder={{ label: 'Select an option', value: null }}
-            style={pickerSelectStyles}
-          />
-        )}
-      />
-
-      <Text style={styles.label}>Poll Number</Text>
-      <Controller
-        control={control}
-        name="poll_number"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Poll Number"
-            onChangeText={onChange}
-            value={value}
-          />
-        )}
-      />
-
-      <Text style={styles.label}>Status</Text>
-      <Controller
-        control={control}
-        name="status"
-        render={({ field: { onChange, value } }) => (
-          <View style={styles.radioGroup}>
-            {['existing', 'new'].map((option) => (
-              <View key={option} style={styles.radioOption}>
-                <RadioButton
-                  value={option}
-                  status={value === option ? 'checked' : 'unchecked'}
-                  onPress={() => onChange(option)}
-                />
-                <Text>{option}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      />
-
-      <Text style={styles.label}>Previous Connector Info</Text>
-      <Controller
-        control={control}
-        name="previous_connector_type"
-        render={({ field: { onChange, value } }) => (
-          <View style={styles.radioGroup}>
-            {['tc', 'pole'].map((option) => (
-              <View key={option} style={styles.radioOption}>
-                <RadioButton
-                  value={option}
-                  status={value === option ? 'checked' : 'unchecked'}
-                  onPress={() => {
-                    onChange(option);
-                    setPreviousConnectorType(option);
-                  }}
-                />
-                <Text>{option.toUpperCase()}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="previous_connector_id"
-        render={({ field: { onChange, value } }) => (
-          <RNPickerSelect
-            onValueChange={onChange}
-            value={value}
-            items={previousConnectorOptions.map((item) => ({
-              label: item.name || item.tc_number || item.pole_number,
-              value: item.id,
-            }))}
-            placeholder={{ label: 'Select an option', value: null }}
-            style={pickerSelectStyles}
-          />
-        )}
-      />
-
-      <TouchableOpacity
-        style={[
-          styles.button,
-          !isFormValid && { backgroundColor: COLORS.gray },
-        ]}
-        onPress={handleSubmit(onSubmit)}
-        disabled={!isFormValid}
+    <KeyboardAvoidingView
+      style={ [theme.layout.flex_1, theme.backgrounds.primary ]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        scrollEnabled={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.buttonText}>Submit</Text>
-      </TouchableOpacity>
-    </View>
+        <Text style={{ fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 24, color: theme.colors.secondary }}>
+          Create Pole
+        </Text>
+
+        <Text style={{ fontSize: 16, marginBottom: 8,color: theme.colors.secondary }}>TC Number</Text>
+        <Controller
+          control={control}
+          name="tc_number"
+          render={({ field: { onChange, value } }) => (
+            <DropDownPicker
+              open={tcOpen}
+              setOpen={setTcOpen}
+              value={value}
+              items={tcOptions}
+              setValue={(callback) => {
+                const selectedValue = typeof callback === 'function' ? callback(value) : callback;
+                console.log('Transformer Selected (setValue):', selectedValue); // Log the selected value
+                onChange(selectedValue); // Update the form state with the selected value
+              }}
+              // onChangeValue={(val) => {
+              //   console.log('Transformer Selected:', val); // Log the selected value
+              //   onChange(v
+              // al); // Update the form state with the selected value
+              // }}
+
+              searchable={true}
+              placeholder="Select TC Number"
+              placeholderTextColor={theme.colors.placeholder}
+              // containerStyle={{ marginBottom: tcOpen ? 200 : 10 }}
+              style={inputStyle}
+              dropDownContainerStyle={[{ zIndex: 3000, height: 200, overflow: 'scroll' },theme?.backgrounds.secondary]}
+              dropDownDirection="AUTO"
+              listMode="SCROLLVIEW"
+              scrollViewProps={{ nestedScrollEnabled: true }}
+              flatListProps={{ nestedScrollEnabled: true }}
+              
+            />
+          )}
+        />
+        <Text style={{ fontSize: 16, marginBottom: 8,color: theme.colors.secondary }}>Pole Number</Text>
+        <Controller
+          control={control}
+          name="poll_number"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={inputStyle}
+              placeholder="Poll Number"
+              onChangeText={onChange}
+              value={value}
+              placeholderTextColor={theme.colors.placeholder}
+            />
+          )}
+        />
+
+        <Text style={{ fontSize: 16, marginBottom: 8,color: theme.colors.secondary }}>Status</Text>
+        <Controller
+          control={control}
+          name="status"
+          render={({ field: { onChange, value } }) => (
+            <View style={{ flexDirection: 'row', marginBottom: 10,color: theme.colors.secondary }}>
+              {['existing', 'new'].map((option) => (
+                <View key={option} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                  <RadioButton
+                    value={option}
+                    status={value === option ? 'checked' : 'unchecked'}
+                    onPress={() => onChange(option)}
+                  />
+                  <Text style={{color: theme.colors.secondary}}>{option}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        />
+
+        <Text style={{ fontSize: 16, marginBottom: 8,color: theme.colors.secondary }}>Previous Connector Type</Text>
+        <Controller
+          control={control}
+          name="previous_connector_type"
+          render={({ field: { onChange, value } }) => (
+            <View style={{ flexDirection: 'row', marginBottom: 10,color: theme.colors.secondary }}>
+              {['tc', 'pole'].map((option) => (
+                <View key={option} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                  <RadioButton
+                    value={option}
+                    status={value === option ? 'checked' : 'unchecked'}
+                    onPress={() => {
+                      onChange(option);
+                      setPreviousConnectorType(option);
+                    }}
+                  />
+                  <Text style={{color: theme.colors.secondary}}>{option.toUpperCase()}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        />
+
+        <Text style={{ fontSize: 16, marginBottom: 8,color: theme.colors.secondary }}>Previous Connector</Text>
+        <Controller
+          control={control}
+          name="previous_connector_id"
+          render={({ field: { onChange, value } }) => (
+            <DropDownPicker
+              open={previousOpen}
+              setOpen={setPreviousOpen}
+              value={value}
+              items={previousConnectorOptions}
+              setValue={(callback) => {
+                const selectedValue = typeof callback === 'function' ? callback(value) : callback;
+                console.log('Previous Connector Selected:', selectedValue); // Log the selected value
+                onChange(selectedValue); // Update the form state with the selected value
+              }}
+              searchable={true}
+              placeholder="Select Previous Connector"
+              placeholderTextColor={theme.colors.placeholder}
+              // containerStyle={{ marginBottom: previousOpen ? 200 : 10, zIndex: 2000 }}
+              style={inputStyle}
+              dropDownContainerStyle={[{ zIndex: 3000, overflow:'scroll' },theme?.backgrounds.secondary]}
+              dropDownDirection="AUTO"
+              listMode="SCROLLVIEW"
+            />
+          )}
+        />
+
+        <TouchableOpacity style={buttonStyle} onPress={handleSubmit(onSubmit)} disabled={!isFormValid}>
+          <Text style={{ color: theme.colors.onPrimary, fontSize: 16, fontWeight: '500', opacity: isFormValid?1:0.5 }}>Submit</Text>
+        </TouchableOpacity>
+      </ScrollView>
+      {/* Popup Modal */}
+      <Modal visible={isPopupVisible} transparent animationType="slide">
+        <View style={[styles.modalContainer, { backgroundColor: theme.colors.primary }]}>
+          <Text style={[styles.modalTitle, { color: theme.colors.secondary }]}>Additional Details</Text>
+
+          <Text style={[styles.label, { color: theme.colors.secondary }]}>Span Length</Text>
+          <TextInput
+            style={[styles.input, { borderColor: theme.colors.secondary, color: theme.colors.secondary }]}
+            value={spanLength.toString()}
+            editable={false} // Non-editable
+          />
+
+          <Text style={[styles.label, { color: theme.colors.secondary }]}>Sag</Text>
+          <TextInput
+            style={[styles.input, { borderColor: theme.colors.secondary, color: theme.colors.secondary }]}
+            value={sag}
+            onChangeText={setSag} // Editable
+            placeholder="Enter Sag"
+            placeholderTextColor={theme.colors.secondary}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: theme.colors.purple250 }]}
+            onPress={handlePopupSubmit}
+          >
+            <Text style={[{ fontSize: 16, fontWeight: '500' }]}>Submit</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: SPACING.large,
-    backgroundColor: COLORS.background,
-  },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    marginBottom: SPACING.large,
-    color: COLORS.text.primary,
     textAlign: 'center',
+    marginBottom: 24,
   },
   label: {
-    fontSize: FONTS.medium,
-    color: COLORS.black,
-    marginBottom: SPACING.small,
+    fontSize: 16,
+    marginBottom: 8,
   },
   input: {
     height: 48,
     borderWidth: 1,
-    borderColor: COLORS.secondary,
     borderRadius: 8,
-    paddingHorizontal: SPACING.medium,
-    marginBottom: SPACING.small,
-    backgroundColor: COLORS.white,
-    fontSize: FONTS.medium,
+    paddingHorizontal: 12,
+    color: "#E5E7EB",
+    marginBottom: 10,
   },
   button: {
     height: 48,
-    backgroundColor: COLORS.primary,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.medium,
+    marginTop: 16,
   },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: FONTS.medium,
-    fontWeight: '500',
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 16,
   },
-  radioGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.small,
-  },
-  radioOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: SPACING.medium,
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 16,
   },
 });
-
-const pickerSelectStyles = {
-  inputIOS: {
-    fontSize: FONTS.medium,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: 4,
-    color: COLORS.black,
-    paddingRight: 30,
-    marginBottom: SPACING.small,
-  },
-  inputAndroid: {
-    fontSize: FONTS.medium,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: 4,
-    color: COLORS.black,
-    paddingRight: 30,
-    marginBottom: SPACING.small,
-  },
-};

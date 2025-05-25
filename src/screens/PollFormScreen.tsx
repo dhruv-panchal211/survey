@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import RNPickerSelect from 'react-native-picker-select';
-import { API_URL, COLORS, SPACING, FONTS } from '../config';
+import { API_URL } from '../config';
+import { useFeederStore } from '../stores/pollStore';
+import { ThemeContext } from '@/theme/ThemeProvider/ThemeProvider';
 
 const pollFormSchema = z.object({
   division: z.string().min(1, 'Division is required'),
@@ -17,11 +19,12 @@ const pollFormSchema = z.object({
 type PollForm = z.infer<typeof pollFormSchema>;
 
 export default function PollFormScreen() {
-  console.log('in pole form screen');
   const navigation = useNavigation();
+    const theme = useContext(ThemeContext); // Access the theme from context
   const [divisions, setDivisions] = useState([]);
   const [subdivisions, setSubdivisions] = useState([]);
   const [feeders, setFeeders] = useState([]);
+  const { setFeederId } = useFeederStore(); // Access Zustand store function
 
   const {
     control,
@@ -56,7 +59,6 @@ export default function PollFormScreen() {
   const fetchDivisions = async () => {
     try {
       const response = await axios.get(`${API_URL}/recommendations`);
-      console.log(response.data);
       setDivisions(response.data.divisions);
     } catch (error) {
       console.error('Error fetching divisions:', error);
@@ -65,10 +67,7 @@ export default function PollFormScreen() {
 
   const fetchSubdivisions = async (divisionId: string) => {
     try {
-      const response = await axios.get(
-        `${API_URL}/recommendations?division_id=${divisionId}`,
-      );
-      console.log({ response });
+      const response = await axios.get(`${API_URL}/recommendations?division_id=${divisionId}`);
       setSubdivisions(response.data.subdivisions);
     } catch (error) {
       console.error('Error fetching subdivisions:', error);
@@ -77,10 +76,7 @@ export default function PollFormScreen() {
 
   const fetchFeeders = async (subdivisionId: string) => {
     try {
-      const response = await axios.get(
-        `${API_URL}/recommendations?subdivision_id=${subdivisionId}`,
-      );
-      console.log({ response });
+      const response = await axios.get(`${API_URL}/recommendations?subdivision_id=${subdivisionId}`);
       setFeeders(response.data.feeders);
     } catch (error) {
       console.error('Error fetching feeders:', error);
@@ -88,36 +84,47 @@ export default function PollFormScreen() {
   };
 
   const onSubmit = (data: PollForm) => {
-    console.log('Form Data:', data);
-    // Handle form submission
-    navigation.navigate('CreateOptions', { feederId: data.feeder });
+    try {
+      setFeederId(data.feeder); // Update Zustand store
+      navigation.navigate('CreateOptions');
+    } catch (error) {
+      console.error('Error setting feeder ID:', error);
+    }
   };
-
-  console.log({ divisions });
+  console.log(theme);
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Division</Text>
-      {divisions.length && (
+    <ScrollView
+      style={[theme.backgrounds.primary, {flex: 1}] }
+      contentContainerStyle={{ padding: 16 }}
+    >
+      <Text style={[styles.title,  theme.backgrounds.primary ]}>Poll Form</Text>
+
+      <Text style={[styles.label, theme.backgrounds.primary]}>Division</Text>
+      {divisions.length > 0 && (
         <Controller
           control={control}
           name="division"
           render={({ field: { onChange, value } }) => (
             <RNPickerSelect
               onValueChange={onChange}
-              items={divisions?.map((division) => ({
+              items={divisions.map((division) => ({
                 label: division.name,
                 value: division.id,
               }))}
               value={value}
               placeholder={{ label: 'Select a division', value: null }}
-              style={pickerSelectStyles}
+              style={{
+                inputIOS: [{ ...styles.input, color: theme.colors.secondary }, theme.borders.rounded_16,theme?.gutters.marginBottom_32],
+                inputAndroid: [{ ...styles.input, color: theme.colors.secondary },theme.borders.rounded_16,theme?.gutters.marginBottom_32],
+              }}
             />
           )}
         />
       )}
-      {/* {errors.division && <Text style={styles.error}>{errors.division.message}</Text>} */}
+      {errors.division && <Text style={[styles.error, { color: theme.colors.error }]}>{errors.division.message}</Text>}
 
       <Text style={styles.label}>Sub-division</Text>
+
       <Controller
         control={control}
         name="subdivision"
@@ -130,11 +137,16 @@ export default function PollFormScreen() {
             }))}
             value={value}
             placeholder={{ label: 'Select a sub-division', value: null }}
-            style={pickerSelectStyles}
+            style={{
+              inputIOS: [{ ...styles.input, color: theme.colors.secondary }, theme.borders.rounded_12,theme?.gutters.marginBottom_32],
+              inputAndroid: [{ ...styles.input, color: theme.colors.secondary },theme.borders.rounded_12, theme?.gutters.marginBottom_32],
+            }}
           />
         )}
       />
-      {/* {errors.subdivision && <Text style={styles.error}>{errors.subdivision.message}</Text>} */}
+      {errors.subdivision && (
+        <Text style={[styles.error, { color: theme.colors.error }]}>{errors.subdivision.message}</Text>
+      )}
 
       <Text style={styles.label}>Feeder</Text>
       <Controller
@@ -149,76 +161,62 @@ export default function PollFormScreen() {
             }))}
             value={value}
             placeholder={{ label: 'Select a feeder', value: null }}
-            style={pickerSelectStyles}
+            style={{
+              inputIOS: [{ ...styles.input, color: theme.colors.secondary},theme?.gutters.marginBottom_32],
+              inputAndroid: [{ ...styles.input, color: theme.colors.secondary},theme?.gutters.marginBottom_32 ],
+            }}
           />
         )}
       />
-      {/* {errors.feeder && <Text style={styles.error}>{errors.feeder.message}</Text>} */}
+      {errors.feeder && <Text style={[styles.error, { color: theme.colors.error }]}>{errors.feeder.message}</Text>}
 
       <TouchableOpacity
         style={[
           styles.button,
-          !isFormValid && { backgroundColor: COLORS.gray },
+          { backgroundColor: isFormValid ? theme.colors.purple250 : theme.colors.purple500 },
         ]}
         onPress={handleSubmit(onSubmit)}
         disabled={!isFormValid}
       >
-        <Text style={styles.buttonText}>Submit</Text>
+        <Text style={{ color: theme.colors.gray800, fontSize: 16, fontWeight: '500' }}>Submit</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: SPACING.medium,
-    backgroundColor: COLORS.white,
-    paddingTop: '50%',
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 24,
+    color: '#FFFFFF', // Ensures title text is visible on dark background
   },
   label: {
-    fontSize: FONTS.medium,
-    color: COLORS.black,
-    marginBottom: SPACING.small,
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#FFFFFF', // Improves label visibility
+  },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    backgroundColor: '#1F1F1F', // Dark but distinct background for inputs
+    color: '#FFFFFF', // Ensures input text is visible
   },
   error: {
-    color: COLORS.error,
-    marginBottom: SPACING.small,
+    fontSize: 14,
+    marginBottom: 8,
+    color: '#FF6B6B', // More visible error color
   },
   button: {
-    backgroundColor: COLORS.primary,
-    padding: SPACING.medium,
-    borderRadius: SPACING.small,
+    height: 48,
+    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.large,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: FONTS.medium,
+    marginTop: 16,
   },
 });
-
-const pickerSelectStyles = {
-  inputIOS: {
-    fontSize: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: 4,
-    color: COLORS.black,
-    paddingRight: 30,
-    marginBottom: SPACING.small,
-  },
-  inputAndroid: {
-    fontSize: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-    borderRadius: 4,
-    color: COLORS.black,
-    paddingRight: 30,
-    marginBottom: SPACING.small,
-  },
-};
