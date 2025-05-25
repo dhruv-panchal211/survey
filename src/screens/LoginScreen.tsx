@@ -157,7 +157,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
           {/* Code For Theme Change */}
-        {/* <TouchableOpacity
+        <TouchableOpacity
           style={[
             theme.backgrounds.gray100,
             theme.borders.rounded_12,
@@ -179,7 +179,7 @@ export default function LoginScreen() {
           ]}>
             Change Theme
           </Text>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => navigation.navigate('Register')}
