@@ -131,40 +131,75 @@ export default function CreatePollScreen() {
       Alert.alert('Error', 'Failed to fetch previous poles');
     }
   };
-
+  
   const onSubmit = async (data: any) => {
-    Geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        const payload = {
-          tc_id: data.tc_number,
-          pole_number: data.poll_number,
-          is_existing: data.status === 'existing',
-          previous_connector_type: data.previous_connector_type,
-          previous_connector_id: data.previous_connector_id,
-          lat: latitude,
-          long: longitude,
-        };
-
-        try {
-          const res = await axios.post(`${API_URL}/pole`, payload);
-          
-          const span_length = res.data.span_length; // Extract span length from response
-          console.log('Span Length:', span_length); // Log span length
-          console.log('Response:', res.data); // Log the entire response
-          setSpanLength(span_length); // Set span length in state
-          setIsPopupVisible(true); 
-          setPoleId(res.data.pole_id); // Set the pole ID in state
-          setPoleStatus(data.status);
-          // Alert.alert('Success', 'Pole created successfully');
-        } catch (error: any) {
-          Alert.alert('Error', error?.response?.data?.message || 'Failed to create poll');
-        }
-      },
-      () => Alert.alert('Error', 'Failed to get current location'),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
+    let hasResponded = false;
+  
+    const getLocation = (onSuccess, onError) => {
+      const optionsHigh = { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 };
+      Geolocation.getCurrentPosition(
+        (position) => {
+          if (!hasResponded) {
+            hasResponded = true;
+            onSuccess(position);
+          }
+        },
+        () => {
+          // Fallback to low accuracy if high accuracy fails
+          const optionsLow = { enableHighAccuracy: false, timeout: 10000, maximumAge: 10000 };
+          Geolocation.getCurrentPosition(
+            (position) => {
+              if (!hasResponded) {
+                hasResponded = true;
+                onSuccess(position);
+              }
+            },
+            (error) => {
+              if (!hasResponded) {
+                hasResponded = true;
+                onError(error);
+              }
+            },
+            optionsLow
+          );
+        },
+        optionsHigh
+      );
+    };
+  
+    const onSuccess = async (position: any) => {
+      const { latitude, longitude } = position.coords;
+      const payload = {
+        tc_id: data.tc_number,
+        pole_number: data.poll_number,
+        is_existing: data.status === 'existing',
+        previous_connector_type: data.previous_connector_type,
+        previous_connector_id: data.previous_connector_id,
+        lat: latitude,
+        long: longitude,
+      };
+  
+      try {
+        const res = await axios.post(`${API_URL}/pole`, payload);
+        const span_length = res.data.span_length;
+        console.log('Span Length:', span_length);
+        console.log('Response:', res.data);
+        setSpanLength(span_length);
+        setIsPopupVisible(true);
+        setPoleId(res.data.pole_id);
+        setPoleStatus(data.status);
+      } catch (error: any) {
+        Alert.alert('Error', error?.response?.data?.message || 'Failed to create poll');
+      }
+    };
+  
+    const onError = () => {
+      Alert.alert('Error', 'Failed to get current location');
+    };
+  
+    getLocation(onSuccess, onError);
   };
+  
   const handlePopupSubmit = async() => {
     // Handle the popup submission logic
     try {
@@ -238,7 +273,7 @@ export default function CreatePollScreen() {
     >
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
-        scrollEnabled={false}
+        scrollEnabled={true}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={{ fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 24, color: theme.colors.secondary }}>
@@ -339,31 +374,35 @@ export default function CreatePollScreen() {
         />
 
         <Text style={{ fontSize: 16, marginBottom: 8,color: theme.colors.secondary }}>Previous Connector</Text>
-        <Controller
-          control={control}
-          name="previous_connector_id"
-          render={({ field: { onChange, value } }) => (
-            <DropDownPicker
-              open={previousOpen}
-              setOpen={setPreviousOpen}
-              value={value}
-              items={previousConnectorOptions}
-              setValue={(callback) => {
-                const selectedValue = typeof callback === 'function' ? callback(value) : callback;
-                console.log('Previous Connector Selected:', selectedValue); // Log the selected value
-                onChange(selectedValue); // Update the form state with the selected value
-              }}
-              searchable={true}
-              placeholder="Select Previous Connector"
-              placeholderTextColor={theme.colors.placeholder}
-              // containerStyle={{ marginBottom: previousOpen ? 200 : 10, zIndex: 2000 }}
-              style={inputStyle}
-              dropDownContainerStyle={[{ zIndex: 3000, overflow:'scroll' },theme?.backgrounds.secondary]}
-              dropDownDirection="AUTO"
-              listMode="SCROLLVIEW"
-            />
-          )}
-        />
+        <View style={{ flex: 1, overflow: 'visible' }}>
+          <Controller
+            control={control}
+            name="previous_connector_id"
+            render={({ field: { onChange, value } }) => (
+              <DropDownPicker
+                open={previousOpen}
+                setOpen={setPreviousOpen}
+                value={value}
+                items={previousConnectorOptions}
+                setValue={(callback) => {
+                  const selectedValue = typeof callback === 'function' ? callback(value) : callback;
+                  console.log('Previous Connector Selected:', selectedValue); // Log the selected value
+                  onChange(selectedValue); // Update the form state with the selected value
+                }}
+                searchable={true}
+                placeholder="Select Previous Connector"
+                placeholderTextColor={theme.colors.placeholder}
+                // containerStyle={{ marginBottom: previousOpen ? 200 : 10, zIndex: 2000 }}
+                style={inputStyle}
+                dropDownContainerStyle={[{ zIndex: 3000, overflow:'visible' },theme?.backgrounds.secondary]}
+                scrollViewProps={{ nestedScrollEnabled: true }} // Enable nested scrolling
+                flatListProps={{ nestedScrollEnabled: true }} // Enable nested scrolling for FlatList
+                dropDownDirection="AUTO"
+                listMode="SCROLLVIEW"
+              />
+            )}
+          />
+        </View>
 
         <TouchableOpacity style={buttonStyle} onPress={handleSubmit(onSubmit)} disabled={!isFormValid}>
           <Text style={{ color: theme.colors.onPrimary, fontSize: 16, fontWeight: '500', opacity: isFormValid?1:0.5 }}>Submit</Text>

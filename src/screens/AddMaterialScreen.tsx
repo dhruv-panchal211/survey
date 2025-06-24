@@ -104,7 +104,6 @@ export default function AddExistingPoleMaterial({ route }) {
       acc[item.question] = item.answer;
       return acc;
     }, {});
-    console.log(payload);
     const poleType = is_existing ? 'existing' : 'new_proposed';
     try {
       const res = await axios.post(
@@ -113,7 +112,7 @@ export default function AddExistingPoleMaterial({ route }) {
       );
       console.log({ poleType: res });
       navigation.navigate('AddNewPoleMaterial',{
-        is_existing: is_existing,
+        is_existing: false,
         poll_id: poll_id,
       });
       Alert.alert('Success', 'Existing Material info submitted successfully');
@@ -167,14 +166,87 @@ export default function AddExistingPoleMaterial({ route }) {
       <Controller
         control={control}
         name="currentAnswer"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter answer"
-            onChangeText={onChange}
-            value={value}
-          />
-        )}
+        render={({ field: { onChange, value } }) => {
+          // Conditional rendering based on the selected question
+          if (watch('currentQuestion') === 'Type of Arrangement') {
+            return (
+              <View>
+                <Text style={[styles.label, theme.fonts.secondary]}>Select Type of Arrangement</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}
+                    onPress={() => onChange('3Ph')}
+                  >
+                    <View
+                      style={{
+                        height: 20,
+                        width: 20,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: theme.colors.secondary,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 5,
+                      }}
+                    >
+                      {value === '3Ph' && (
+                        <View
+                          style={{
+                            height: 10,
+                            width: 10,
+                            borderRadius: 5,
+                            backgroundColor: theme.colors.secondary,
+                          }}
+                        />
+                      )}
+                    </View>
+                    <Text style={{ color: theme.colors.secondary }}>3Ph</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                    onPress={() => onChange('1Ph')}
+                  >
+                    <View
+                      style={{
+                        height: 20,
+                        width: 20,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: theme.colors.secondary,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 5,
+                      }}
+                    >
+                      {value === '1Ph' && (
+                        <View
+                          style={{
+                            height: 10,
+                            width: 10,
+                            borderRadius: 5,
+                            backgroundColor: theme.colors.secondary,
+                          }}
+                        />
+                      )}
+                    </View>
+                    <Text style={{ color: theme.colors.secondary }}>1Ph</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }
+
+          // Default TextInput for other questions
+          return (
+            <TextInput
+              style={styles.input}
+              placeholder="Enter answer"
+              onChangeText={onChange}
+              value={value}
+            />
+          );
+        }}
       />
 
       <TouchableOpacity style={[
